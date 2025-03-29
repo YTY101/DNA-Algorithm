@@ -11,23 +11,22 @@ query = "CTGCAACGTTCGTGGTTCATGTTTGAGCGATAGGCCGAAACTAACCGTGCATGCAACGTTAGTGGATCATT
 def main():
     matrix = load_data(reference, query)
     # show_data(matrix)
-    pos_chains, neg_chains = get_chains(matrix, 10)
+    pos_chains, neg_chains = get_chains(matrix, 5)
     print(len(reference))
     print(len(query))
     print(len(pos_chains))
     print(len(neg_chains))
     
-    # for chain in pos_chains:
-    #     if chain.len < 20:
-    #         pos_chains.remove(chain)
-    # for chain in neg_chains:
-    #     if chain.len < 20:
-    #         neg_chains.remove(chain)
-    # print(len(pos_chains))
-    # print(len(neg_chains))
+    chains, start_chains, end_chains, neighbours = get_graph(pos_chains, neg_chains, matrix)
     
+    # print("Chains:")
+    # for chain in chains:
+    #     print(chain.startX, chain.startY, chain.endX, chain.endY, chain.len)
+    # print("Neighbours:", neighbours)
+    print("Start Finding Path...")
+    distance = find_path(chains, start_chains, end_chains, neighbours)
+    print("Final Distance:", distance)
     show_chains_effective(pos_chains, neg_chains)
-    # print("MARK2")
 
 
 if __name__ == '__main__':
