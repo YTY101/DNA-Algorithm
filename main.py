@@ -18,19 +18,9 @@ def main():
     
     chains, start_chains, end_chains, neighbours = get_graph(chains, matrix)
     
-    # print("Chains:")
-    # for chain in chains:
-    #     print(chain.startX, chain.startY, chain.endX, chain.endY, chain.len)
-    # print("Neighbours:", neighbours)
-    
     print("Start Finding Path...")
     path = find_path(chains, start_chains, end_chains, neighbours)
     print("Path:", path)
-
-    # print("Path Chains: ")
-    # for chain in chains:
-    #     print(chain)
-    
     
     answers = parse_answer(path, chains)
     
@@ -40,9 +30,7 @@ def main():
 
     for answer in answers:
         print(answer)
-    
-    
-    
+        
     show_chains_effective(chains)
 
 
