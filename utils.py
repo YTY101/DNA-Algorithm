@@ -14,8 +14,9 @@ class Chain():
         self.endY = endY
         self.len = len
         self.type = type
+        self.is_repeat = False
     def __str__(self):
-        return "StartX: " + str(self.startX) + " StartY: " + str(self.startY) + " EndX: " + str(self.endX) + " EndY: " + str(self.endY) + " Len: " + str(self.len) + " Type: " + str(self.type)
+        return "StartX: " + str(self.startX) + " StartY: " + str(self.startY) + " EndX: " + str(self.endX) + " EndY: " + str(self.endY) + " Len: " + str(self.len) + " Type: " + str(self.type) + " Is Repeat: " + str(self.is_repeat)
 
 class ProirityQueue():
     def __init__(self):
@@ -196,6 +197,40 @@ def find_path(chains, start_chains, end_chains, neighbours):
     path.reverse()
     return path
 
+
+def cut_chains(path_chains):
+    i = 0
+    while i < len(path_chains) - 1:
+        if not path_chains[i].is_repeat:
+            p = i + 1
+            lowestY = path_chains[i].endY
+            while path_chains[p].is_repeat:
+                lowestY = min(lowestY, max(path_chains[p].startY, path_chains[p].endY))
+                p += 1
+            for j in range(i, p):
+                deltaY = max(path_chains[j].startY, path_chains[j].endY) - lowestY
+                if path_chains[j].type == 'P':
+                    path_chains[j].endY -= deltaY
+                    path_chains[j].endX -= deltaY
+                if path_chains[j].type == 'N':
+                    path_chains[j].startY -= deltaY
+                    path_chains[j].startX += deltaY
+        i = p           
+    for j in range(len(path_chains) - 1):
+        deltaX = path_chains[j].endX - path_chains[j + 1].startX + 1
+        if deltaX > 0:
+            if path_chains[j + 1].type == 'P':
+                path_chains[j + 1].startX += deltaX
+                path_chains[j + 1].startY += deltaX
+            if path_chains[j + 1].type == 'N':
+                path_chains[j].endX -= deltaX
+                path_chains[j].endY += deltaX
+
+    for j in range(len(path_chains)):
+        path_chains[j].len = path_chains[j].endX - path_chains[j].startX + 1 
+
+    return  path_chains
+
 def parse_answer(path, chains):
     answers = []
     path_chains = []
@@ -211,30 +246,24 @@ def parse_answer(path, chains):
         next_chain_id = path[i + 1]
         chain = chains[chain_id]
         next_chain = chains[next_chain_id]
-        delta = chain.endX - next_chain.startX + 1
+
+        if i == 0:
+            chain.is_repeat = False
             
-        if chain.type == 'P':
-            if next_chain.type == 'P':
-                chain.endX -= delta
-                chain.endY -= delta
-            if next_chain.type == 'N':
-                if chain.endY > next_chain.startY:
-                    chain.endX -= delta
-                    chain.endY += delta
-                else:
-                    next_chain.startX += delta
-                    next_chain.startY -= delta
-        if chain.type == 'N':
-            next_chain.startX += next_chain.startY - chain.startY
-            next_chain.startY -= next_chain.startY - chain.startY
-            deltaX = chain.endX - next_chain.startX + 1
-            chain.endX -= deltaX
-            chain.endY += deltaX
-        
-        chain.len = chain.endX - chain.startX + 1
-        next_chain.len = next_chain.endX - next_chain.startX + 1
+        if not chain.is_repeat:
+            next_chain.is_repeat = True
+        if chain.is_repeat:
+            if next_chain.type == 'P' and next_chain.endY - max(chain.startY, chain.endY) >= 5:
+                next_chain.is_repeat = False
+            else:
+                next_chain.is_repeat = True
         path_chains.append(chain)
     path_chains.append(chains[path[-1]])
+    
+    # for i in range(len(path)):
+    #     path_chains.append(chains[path[i]])
+    
+    path_chains = cut_chains(path_chains)
     
     # print("Path Chains: ")
     # for chain in path_chains:
@@ -247,12 +276,12 @@ def parse_answer(path, chains):
         repeated = True
         while p < len(path_chains) and repeated:
             repeated = False
-            if path_chains[p].type == 'P' and path_chains[p].endY == path_chains[i].endY:
+            if path_chains[p].type == 'P' and abs(path_chains[p].endY - path_chains[i].endY) <= 5:
                 repeated = True
                 position = path_chains[i].endX
                 length = path_chains[p].len
                 repeat = 0
-                while path_chains[p].endY == path_chains[i].endY and path_chains[p].len == length:
+                while abs(path_chains[p].endY - path_chains[i].endY) <= 5 and abs(path_chains[p].len - length) <= 5:
                     repeat += 1
                     p += 1
                 answers.append(Info(position + 1, length, repeat, 'P'))

@@ -27,18 +27,21 @@ def main():
     path = find_path(chains, start_chains, end_chains, neighbours)
     print("Path:", path)
 
-    print("Path Chains: ")
-    for chain in chains:
-        print(chain)
+    # print("Path Chains: ")
+    # for chain in chains:
+    #     print(chain)
+    
     
     answers = parse_answer(path, chains)
-    for answer in answers:
-        print(answer)
     
     print("Path Chains: ")
     for chain in chains:
         print(chain)
 
+    for answer in answers:
+        print(answer)
+    
+    
     
     show_chains_effective(chains)
 
