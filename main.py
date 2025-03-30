@@ -11,7 +11,7 @@ query = "CTGCAACGTTCGTGGTTCATGTTTGAGCGATAGGCCGAAACTAACCGTGCATGCAACGTTAGTGGATCATT
 def main():
     matrix = load_data(reference, query)
     # show_data(matrix)
-    chains = get_chains(matrix, 20)
+    chains = get_chains(matrix, 5)
     print("Reference Length:", len(reference))
     print("Query Length:", len(query))
     print("Number of Chains:", len(chains))
@@ -22,12 +22,13 @@ def main():
     path = find_path(chains, start_chains, end_chains, neighbours)
     print("Path:", path)
     
-    answers = parse_answer(path, chains)
+    path_chains, answers = parse_answer(path, chains)
     
     print("Path Chains: ")
-    for chain in chains:
+    for chain in path_chains:
         print(chain)
 
+    print("Answers: ")
     for answer in answers:
         print(answer)
         

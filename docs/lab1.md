@@ -99,6 +99,7 @@
             return extract_sequence_from_chains(optimal_path, reference, query)
         else:
             return "No repeating variant found"
+### 此处省略了对寻路后的chains进行梳理剪裁的部分，该部分复杂度可忽略，详见代码库cut_chains函数
 ## 时空复杂度
 
 ### 图化算法
@@ -113,3 +114,8 @@
   * 距离表：O(n)
   * 因此总的空间占用不会超过O(n^2)
 ## 运行结果截图
+### Chains可视化
+<img src = "./imgs/lab1_figure.png">
+
+### 命令行输出答案
+<img src = "./imgs/lab1_cmd.png">

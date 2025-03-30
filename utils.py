@@ -295,7 +295,7 @@ def parse_answer(path, chains):
                     p += 1
                 answers.append(Info(position + 1, length, repeat, 'N'))
         i = p
-    return answers
+    return path_chains, answers
 
 
 def show_data(matrix):
