@@ -14,6 +14,8 @@ class Chain():
         self.endY = endY
         self.len = len
         self.type = type
+    def __str__(self):
+        return "StartX: " + str(self.startX) + " StartY: " + str(self.startY) + " EndX: " + str(self.endX) + " EndY: " + str(self.endY) + " Len: " + str(self.len) + " Type: " + str(self.type)
 
 class ProirityQueue():
     def __init__(self):
@@ -56,7 +58,16 @@ class ProirityQueue():
     def is_empty(self):
         return len(self.heap) == 0
 
-
+class Info():
+    def __init__(self, position, length, repeat, type):
+        self.position = position
+        self.length = length
+        self.repeat = repeat
+        self.type = type
+    
+    def __str__(self):
+        return "Position: " + str(self.position) + " Length: " + str(self.length) + " Repeat: " + str(self.repeat) + " Type: " + str(self.type)
+        
 def load_data(reference, query):
     # 创建一个二维矩阵来表示匹配情况
     # 如果 query 和 reference 在某个位置匹配，值为 1，如果互补，值为 -1，否则为 0
@@ -108,21 +119,21 @@ def get_chains(matrix, threshold=-1):
                 chain = Chain(startX, startY, endX, endY, len, 'N')
                 if threshold == -1 or len >= threshold:
                     neg_chains.append(chain)
-            
-    return pos_chains, neg_chains
+        chains = pos_chains + neg_chains
+    return chains
 
-def _get_neigbours(chains, col_start_chains, end_chains):
+def get_neigbours(chains, col_start_chains, end_chains):
     neighbours = {}
     for i in range(len(chains)):
         neighbours[i] = []
         if i not in end_chains:
             for cover_col in range(chains[i].startX + 1, chains[i].endX + 2):
                 for chain_id in col_start_chains[cover_col]:
-                    neighbours[i].append(chain_id)
+                    if chain_id != i:
+                        neighbours[i].append(chain_id)
     return neighbours
 
-def get_graph(pos_chains, neg_chains, matrix):
-    chains = pos_chains + neg_chains
+def get_graph(chains, matrix):
     chains_num = len(chains)
     
     start_chains = []
@@ -143,22 +154,25 @@ def get_graph(pos_chains, neg_chains, matrix):
 
     # print("Col_Start_Chain: ", col_start_chains)
     # print("End_Chains", end_chains)
-    neighbours = _get_neigbours(chains, col_start_chains, end_chains)
+    neighbours = get_neigbours(chains, col_start_chains, end_chains)
     return  chains, start_chains, end_chains, neighbours
 
 
 
 def find_path(chains, start_chains, end_chains, neighbours):
     distances = {}
+    come_froms = {}
     pq = []
-
     for i in range(len(chains)):
         distances[i] = -1
+        come_froms[i] = -1
     for i in start_chains:
         distances[i] = 0
         heapq.heappush(pq, (distances[i], i))  
     
-    while pq:
+    end_chain = -1
+    found = False
+    while pq and not found:
         current_distance, current_chain = heapq.heappop(pq)
         # print("Current Chain: ", current_chain, "Current Distance: ", current_distance)
         if current_distance != -1 and current_distance > distances[current_chain]:
@@ -168,11 +182,93 @@ def find_path(chains, start_chains, end_chains, neighbours):
             if distances[neighbour] == -1 or distance < distances[neighbour]:
                 distances[neighbour] = distance
                 heapq.heappush(pq, (distance, neighbour))
+                come_froms[neighbour] = current_chain
             if neighbour in end_chains:
-                # print("Hit the end: ", neighbour)
-                return distances[neighbour]
-        # print("Distances: ", distances)
-    return -1
+                end_chain = neighbour
+                found = True
+                break
+    path = []
+    path.append(end_chain)
+    cf = come_froms[end_chain]
+    while cf != -1:
+        path.append(cf)
+        cf = come_froms[cf]
+    path.reverse()
+    return path
+
+def parse_answer(path, chains):
+    answers = []
+    path_chains = []
+    
+    # for i in range(len(path)):
+    #     path_chains.append(chains[path[i]])
+    # print("Path Chains: ")
+    # for chain in path_chains:
+    #     print(chain)
+    
+    for i in range(len(path) - 1):
+        chain_id = path[i]
+        next_chain_id = path[i + 1]
+        chain = chains[chain_id]
+        next_chain = chains[next_chain_id]
+        delta = chain.endX - next_chain.startX + 1
+            
+        if chain.type == 'P':
+            if next_chain.type == 'P':
+                chain.endX -= delta
+                chain.endY -= delta
+            if next_chain.type == 'N':
+                if chain.endY > next_chain.startY:
+                    chain.endX -= delta
+                    chain.endY += delta
+                else:
+                    next_chain.startX += delta
+                    next_chain.startY -= delta
+        if chain.type == 'N':
+            next_chain.startX += next_chain.startY - chain.startY
+            next_chain.startY -= next_chain.startY - chain.startY
+            deltaX = chain.endX - next_chain.startX + 1
+            chain.endX -= deltaX
+            chain.endY += deltaX
+        
+        chain.len = chain.endX - chain.startX + 1
+        next_chain.len = next_chain.endX - next_chain.startX + 1
+        path_chains.append(chain)
+    path_chains.append(chains[path[-1]])
+    
+    # print("Path Chains: ")
+    # for chain in path_chains:
+    #     print(chain)
+    answers = []
+    i = 0
+    while i < len(path_chains) - 1:
+        # print("Chain: ", chain.startX, chain.startY, chain.endX, chain.endY, chain.len, chain.type)
+        p = i + 1
+        repeated = True
+        while p < len(path_chains) and repeated:
+            repeated = False
+            if path_chains[p].type == 'P' and path_chains[p].endY == path_chains[i].endY:
+                repeated = True
+                position = path_chains[i].endX
+                length = path_chains[p].len
+                repeat = 0
+                while path_chains[p].endY == path_chains[i].endY and path_chains[p].len == length:
+                    repeat += 1
+                    p += 1
+                answers.append(Info(position + 1, length, repeat, 'P'))
+            if path_chains[p].type == 'N' and path_chains[p].startY == path_chains[i].endY:
+                repeated = True
+                position = path_chains[i].endX
+                length = path_chains[p].len
+                repeat = 0
+                while path_chains[p].startY == path_chains[i].endY and path_chains[p].len == length:
+                    repeat += 1
+                    p += 1
+                answers.append(Info(position + 1, length, repeat, 'N'))
+        i = p
+    return answers
+
+
 def show_data(matrix):
     fig, ax = plt.subplots(figsize=(10, 10))
 
@@ -206,11 +302,19 @@ def show_chains(pos_chains, neg_chains):
     plt.tight_layout()
     plt.show()
     
-def show_chains_effective(pos_chains, neg_chains):
+def show_chains_effective(chains):
     fig, ax = plt.subplots(figsize=(10, 10))
 
+    pos_chains = []
+    neg_chains = []
     pos_lines = []
     neg_lines = []
+
+    for chain in chains:
+        if chain.type == 'P':
+            pos_chains.append(chain)
+        if chain.type == 'N':
+            neg_chains.append(chain)
 
     for chain in pos_chains:
         pos_lines.append([[chain.startX, chain.startY], [chain.endX, chain.endY]])
@@ -218,6 +322,7 @@ def show_chains_effective(pos_chains, neg_chains):
     for chain in neg_chains:
         neg_lines.append([[chain.startX, chain.startY], [chain.endX, chain.endY]])
 
+        
     pos_line_collection = LineCollection(pos_lines, colors='blue', linewidths=1)
     neg_line_collection = LineCollection(neg_lines, colors='red', linewidths=1)
 
