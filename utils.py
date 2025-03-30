@@ -23,7 +23,7 @@ class ProirityQueue():
         self.heap = []
 
     def _compare(self, item1, item2):
-        return item1 < item2
+        return item1[0] < item2[0]
 
     def _shift_up(self, i):
         parent = (i - 1) // 2
@@ -163,18 +163,18 @@ def get_graph(chains, matrix):
 def find_path(chains, start_chains, end_chains, neighbours):
     distances = {}
     come_froms = {}
-    pq = []
+    pq = ProirityQueue()
     for i in range(len(chains)):
         distances[i] = -1
         come_froms[i] = -1
     for i in start_chains:
         distances[i] = 0
-        heapq.heappush(pq, (distances[i], i))  
+        pq.push((distances[i], i))  
     
     end_chain = -1
     found = False
-    while pq and not found:
-        current_distance, current_chain = heapq.heappop(pq)
+    while not pq.is_empty() and not found:
+        current_distance, current_chain = pq.pop()
         # print("Current Chain: ", current_chain, "Current Distance: ", current_distance)
         if current_distance != -1 and current_distance > distances[current_chain]:
             continue
@@ -182,12 +182,13 @@ def find_path(chains, start_chains, end_chains, neighbours):
             distance = current_distance + 1
             if distances[neighbour] == -1 or distance < distances[neighbour]:
                 distances[neighbour] = distance
-                heapq.heappush(pq, (distance, neighbour))
+                pq.push((distance, neighbour))
                 come_froms[neighbour] = current_chain
             if neighbour in end_chains:
                 end_chain = neighbour
                 found = True
                 break
+            
     path = []
     path.append(end_chain)
     cf = come_froms[end_chain]
